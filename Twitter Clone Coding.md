@@ -43,7 +43,7 @@ export defau lt initializeApp(firebaseConfig);
 
 기본적인 파일 틀은 component와 routes를 사용할 것이다.
 
-├─components: App.js Router.js
+├─components: App.js Router.js Navigator.js
 
 └─routes: Auth.js, EditProfile.js, Home.js, Profile.js
 
@@ -280,6 +280,114 @@ submit을 하였을때 작동을 하도록 onSubmit을 만들고 가입을 해�
 ```
 
 각각의 버튼에 name에 고유값을 주어서 클릭되었을때 이 값을 이용해서 어떤가입을 눌렀는지 판단할것이다 firebase.auth에 있는 GoogleAuthProvider와 GithubAuthProvider를 이용해서 provider를 받고 `authService.signInWithPopup(provider)`에 넘겨주어 로그인을 하게 할 것이다.
+
+**동작 변화 감지하기**
+
+이렇게 하면 문제가 생긴다 로그인을 시도해도 app.js에 있는 IsLoggedIn state가 그대로 false가 되는 것이다 이유는 firebase가 초기화가되고 업데이트가 되기전에 모든 코드가 종료되었기때문에 react에서는 이를 감지하지 못한 것이다 따라서 초기화가 끝난후에 코드를 실행시켜 주어야한다 
+
+- [onAuthStateChanged](https://firebase.google.com/docs/reference/js/auth.auth.md?hl=ko#authonauthstatechanged)
+
+firebase의 로그인상태를 감지하는 관찰자이다 이를 통해 초기화가 끝나고 로그인여부 판단 및 초기화 여부를 저장해 줄것이다 초기화가 완료되어야 Router를 띄워준다
+
+```react
+//App.js
+const [init, setInit] = useState(false); //초기화가 되었는지 체크
+//시작될때 한번만 필요하다
+useEffect(() => {
+    authService.onAuthStateChanged((user) => {
+        if (user) {
+            setIsLoggedIn(true);
+        } else {
+            setIsLoggedIn(false);
+        }
+        setInit(true);
+    });
+}, []);
+return (
+    <>
+    {init ? <AppRouter IsLoggedIn={IsLoggedIn} /> : "Initialized"}
+    <footer>&copy; {new Date().getFullYear()}</footer> //footer나 navigator를 추가하기 위해서 router말고 app.js파일을 만들어서 3등분으로 분리할 수 있게끔 하였다
+</>
+);
+```
+
+**Profile 창에서 로그아웃 버튼 만들기**
+
+로그인을 하였으니 로그아웃을 만들어야한다 Profile창에서 이를 구현할 것이다 이를위해 Router를 수정한다
+
+```react
+//Router.js
+<Routes>
+    {IsLoggedIn ? (
+        <>
+        <Route exact path="/" element={<Home />}></Route>
+        <Route exact path="/profile" element={<Profile />}></Route>
+        </>
+    ) : (
+        <Route exact path="/" element={<Auth />}></Route>
+    )}
+</Routes>
+```
+
+로그인이 되었을때 들어갈 수 있도록하고 경로를 /profile로 설정한다
+
+```react
+//profile.js
+const Profile = () => {
+  const logOutClick = () => {
+    authService.signOut();
+  };
+  return (
+    <>
+      <button onClick={logOutClick}>
+        <Link to="/">Log Out</Link> 
+      </button>
+    </>
+  );
+};
+```
+
+로그아웃 방법은 간단하다 singOut() method를 호출하기만 하면된다 로그아웃시에 Home화면으로 돌아가기위해 Link를 넣는다
+
+**Navigator만들기**
+
+profile창 Home화면을 왔다갔다할 navigator를 만들것이다 
+
+```react
+// Router.js
+<Router>
+      {IsLoggedIn && <Navigator />} 
+      <Routes>
+```
+
+로그인시 navigator가 보일수 있게 추가해 준다
+
+```react
+import React from "react";
+import { Link } from "react-router-dom";
+
+const Navigator = () => {
+  return (
+    <>
+      <ul>
+        <li>
+          <Link to="/">Home</Link>
+        </li>
+        <li>
+          <Link to="/profile">My ProFile</Link>
+        </li>
+      </ul>
+    </>
+  );
+};
+
+export default Navigator;
+
+```
+
+Link를 이용해서 클릭시 이동하게 한다
+
+
 
 
 
