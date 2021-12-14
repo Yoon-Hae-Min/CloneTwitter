@@ -1,5 +1,4 @@
-import { dbService } from "fbase";
-import react from "react";
+import { dbService, storageService } from "fbase";
 import { useState } from "react";
 
 const CloneTweet = ({ clonetweet, isOwner, key }) => {
@@ -9,6 +8,7 @@ const CloneTweet = ({ clonetweet, isOwner, key }) => {
     const ok = window.confirm("Are you sure delete this?");
     if (ok) {
       dbService.doc(`cloneTweet/${clonetweet.id}`).delete();
+      storageService.refFromURL(clonetweet.imgUrl).delete();
     }
   };
 
@@ -38,6 +38,8 @@ const CloneTweet = ({ clonetweet, isOwner, key }) => {
       ) : (
         <>
           <h4>{clonetweet.text}</h4>
+          {clonetweet.imgUrl && <img src={clonetweet.imgUrl}></img>}
+
           {isOwner && (
             <>
               <button onClick={deleteTweet}>Delete tweet</button>

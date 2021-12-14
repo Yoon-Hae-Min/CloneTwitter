@@ -387,7 +387,255 @@ export default Navigator;
 
 Link를 이용해서 클릭시 이동하게 한다
 
+## 트윗 만들기
 
+**트윗 DB작성**
+
+트윗 작업을 하기위해서는 먼저 Home화면에 기본적인 세팅과 CloneTweet이라는 component를 만들어 줄것이다
+
+```react
+//Home.js
+const [clonetweet, setClonetweet] = useState("");
+//....중략.....
+return (
+    <div>
+      <form onSubmit={onSubmit}>
+        <input
+          onChange={onChange}
+          value={clonetweet}
+          type="text"
+          placeholder="What is your mind"
+          maxLength={120}
+        ></input>
+        <input type="submit"></input>
+      </form>
+    </div>
+  );
+```
+
+트윗을 작성할수 있는 창과 submit을 할 수 있는 버튼을 생성한다 위와마찬가지로 onChange 로 state에 변경값을 저장한다 
+
+onSubmit은 form을 제출하였을때 이값이 db로 넘어가야한다
+
+```react
+const onSubmit = (event) => {
+    event.preventDefault();
+    dbService.collection("cloneTweet").add({
+        text: clonetweet, //트윗내용
+        createAt: Date.now(), //생성날짜
+        user: userObj.uid, //유저 고유값 로그인유저가 저장된 값이랑 같으면 수정이나 삭제를 할수 있음
+    });
+    setClonetweet("");// 트윗input의 값이 사라져야함
+};
+```
+
+`dbService.collection("cloneTweet")`으로 collection을 지정해주고 거기에 add를 사용하여 데이터를 저장한다
+
+**트윗 DB에서 읽어오기**
+
+데이터 베이스에 있는 트윗들을 가져와야한다 이에 2가지 방법을 사용할 것인데 이중에서 두번째 방법을 더 선호한다
+
+1. forEach 사용하기
+
+   ```react
+   const getClonetweets = async () => {
+       const dbtweets = await dbService.collection("cloneTweet").get();
+       dbtweets.forEach((document) => {
+           const clonetwwetObj = {
+               ...document.data(), //데이터를 모두가져오고
+               id: document.id, //id를 추가함
+           };
+           setClonetweets((pre) => [clonetwwetObj, ...pre]);
+       });
+   }; //이건 계속 re-rendering이 일어남
+   ```
+
+   Collection경로로 읽어와 get을해서 객체를 얻어온다 그리고 이객체를 forEach를 이용해서 하나의 트윗 obj로 변경해서 state에 저장한다 처음 시작시에 useEffect를 이용해서 getClonetweets를 호출하면 호출마다 데이터를 가져와 보여준다
+
+2. onSnapshot 사용하기
+
+   ```react
+   useEffect(() => {
+       dbService
+         .collection("cloneTweet")
+         .orderBy("createAt", "desc") //시간순 정렬
+         .onSnapshot((snapshot) => {
+           const dbtweet = snapshot.docs.map((doc) => ({
+             id: doc.id, //id를 추가
+             ...doc.data(), //데이터를 모두가져옴
+           }));
+           setClonetweets(dbtweet);
+         });
+     }, []);
+   ```
+
+   onSnapshot 이라는 데이터베이스의 감지를 체크하는 eventListener같은 함수를 사용한다 이를 이용해 똑같이 데이터를 추출해 오는데 get함수가 아닌 argument로 함수를 넣어주어서 가져와 state에 저장한다
+
+두가지 방법이 있지만 밑에 방법은 rendring이 단한번만 일어나기 때문에 랜더링을 줄일 수 있다
+
+트윗을 읽어왔으니 트윗을 띄워줄 component를 하나 생성한다 (CloneTweet) 그리고 Home화면에 연결한다
+
+```react
+<div>
+    {clonetweets.map((clonetweet) => (
+        <CloneTweet
+            clonetweet={clonetweet}
+            isOwner={clonetweet.user === userObj.uid}
+            key={clonetweet.id}
+            />
+    ))}
+</div>
+```
+
+받아온 트윗들은 모두 객체로 되어있기 때문에 map을 이용해서 컴포넌트를 하나씩 만들 것이다. 이때 prop로 트윗내용과 이 트윗이 로그인된 사람것이지를 알려주는 boolean 을 넘겨줄 것이다.
+
+```react
+return (
+    <div key={key}>
+            <h4>{clonetweet.text}</h4>
+            {isOwner && (
+            <>
+            <button onClick={deleteTweet}>Delete tweet</button>
+            <button onClick={toggleEditMode}>Edit tweet</button> //toggleEditMode는 조금이따가 설명
+            </>
+        )}
+    </div>
+);
+```
+
+트윗을 보여주고 트윗이 자신것이면 버튼을 보여주게 하였다
+
+**트윗 삭제하기**
+
+```react
+  const deleteTweet = () => {
+    const ok = window.confirm("Are you sure delete this?");
+    if (ok) {
+      dbService.doc(`cloneTweet/${clonetweet.id}`).delete();
+    }
+  };
+```
+
+Delete 버튼을 눌렀을떄 실행되는 함수이다 confirm을 이용해서 한번더 물어보고 확인을 누르면 doc의 경로를 지정해서 삭제한다 이때 우리가 지정해놓은 id로 이용한다
+
+**트윗 수정하기**
+
+트윗을 수정하려면 먼저 2개의 state를 만들어야한다 바로 edit모드가 켜졌는지 확인할 boolean과 수정된 내용을 저장할 state가 필요하다
+
+```react
+const [editMode, setEditMode] = useState(false);
+const [editTweet, setEditTweet] = useState(clonetweet.text);
+const toggleEditMode = () => {
+    setEditMode((pre) => !pre);
+};
+```
+
+toogleEditMode는 버튼을 누를때마다 eidtMode의 state를 반대로 설정한다 
+
+```react
+<div key={key}>
+      {editMode ? (
+        <>
+          <form onSubmit={onSubmit}>
+            <input type="text" onChange={onChange} value={editTweet}></input>
+            <input type="submit"></input>
+          </form>
+        </>
+      ) : (
+        <>
+          <h4>{clonetweet.text}</h4>
+          {isOwner && (
+            <>
+              <button onClick={deleteTweet}>Delete tweet</button>
+              <button onClick={toggleEditMode}>Edit tweet</button>
+            </>
+          )}
+        </>
+      )}
+    </div>
+```
+
+수정에 필요한 input창들을 넣고 mode가 true가 되면 수정창이 보이고 false이면 트윗과 삭제 수정버튼이 보이도록 한다 마찬가지로 onChange함수를 만들어서 editTweet을 설정한다
+
+```react
+  const onSubmit = (event) => {
+    event.preventDefault();
+    dbService.doc(`cloneTweet/${clonetweet.id}`).update({ text: editTweet });
+    toggleEditMode();
+  };
+```
+
+수정하는 방법은 간단하다 삭제와 마찬가지로 doc으로 경로를 지정해주고 update함수로 update해주면 된다 그리고 editmode를 false로 변경한다.
+
+## 파일 업로드하기
+
+**파일 읽어들이기**
+
+파일을 업로드 하기 위해서 file업로드에 필요한 input창을 생성한다 이미지만 허용하기위해 accept를 image로 사용하였다
+
+```react
+const fileref = useRef();
+..중략..
+<input
+    ref={fileref}
+    type="file"
+    accept="image/*"
+    onChange={onFileChange}
+    ></input>
+```
+
+이제 파일을 선택할 수 있는데 이 사진이 선택되면 url로 만들어 데이터 베이스에 저장해 줄것이다
+
+```react
+const [img, setImg] = useState();
+const onFileChange = (event) => {
+    const {
+        target: { files },
+    } = event;
+    const theFile = files[0];//arr로 반환되었음
+    const reader = new FileReader();
+    reader.onloadend = (finished) => { //loading이 끝나야 실행
+        const {
+            currentTarget: { result },
+        } = finished;
+        setImg(result); //파일의 인코딩(?)된 데이터 문자열을 저장한다
+    };
+    reader.readAsDataURL(theFile); //url로 변환한다. 
+};
+```
+
+처음보는 함수들이 많아졌다 
+
+- [FileReader](https://developer.mozilla.org/ko/docs/Web/API/FileReader)
+- [readAsDataURL](https://developer.mozilla.org/ko/docs/Web/API/FileReader/readAsDataURL) 
+
+file 입력과 관련된 함수들이다. 파일이 선택되면 이 함수들을 이용해서 데이터베이스에 쓸 준비를 한다.  `reader.readAsDataURL(theFile);` 가 실행이되어야 reader.onloadend가 실행이 된다 파일을 올렸을때 남은것이 사진을 문자열로 변환된것이다(Img state)
+
+**파일 업로드하기**
+
+파일을 읽었으니 sumit을 통해서 데이터베이스에 저장해 줄 차례이다 기존의 submit을 
+
+```react
+const onSubmit = async (event) => {
+    event.preventDefault();
+    let imgUrl = "";
+    if (img) {
+        const fileRef = storageService.ref().child(`${userObj.uid}/${uuidv4()}`);
+        const response = await fileRef.putString(img, "data_url");
+        console.log(await response.ref.getDownloadURL()); //요 3줄 이해하기 참힘들었따...
+        imgUrl = await response.ref.getDownloadURL(); //https://firebase.google.com/docs/storage/web/download-files?authuser=0
+    }
+    const clonetweetObj = {
+        text: clonetweet,
+        createAt: Date.now(),
+        user: userObj.uid,
+        imgUrl,
+    };
+    dbService.collection("cloneTweet").add(clonetweetObj);
+    setClonetweet("");
+    setImg("");
+};
+```
 
 
 
