@@ -577,7 +577,7 @@ toogleEditMode는 버튼을 누를때마다 eidtMode의 state를 반대로 설�
 const fileref = useRef();
 ..중략..
 <input
-    ref={fileref}
+    ref={fileref} //밑에서 파일선택값을 지울때 사용
     type="file"
     accept="image/*"
     onChange={onFileChange}
@@ -611,9 +611,30 @@ const onFileChange = (event) => {
 
 file 입력과 관련된 함수들이다. 파일이 선택되면 이 함수들을 이용해서 데이터베이스에 쓸 준비를 한다.  `reader.readAsDataURL(theFile);` 가 실행이되어야 reader.onloadend가 실행이 된다 파일을 올렸을때 남은것이 사진을 문자열로 변환된것이다(Img state)
 
+```react
+        {img && (
+          <>
+            <img src={img} width="40px" alt="미리보기를 불러올수 없습니다" />
+            <button onClick={deleteImg}>Clear</button>
+          </>
+        )}
+```
+
+여기서 추가로 파일을 미리보게 하고싶다면 img state를 이용해서 img경로를 지정해주고 버튼을 이용해서 삭제까지 구현해주자
+
+```react
+const deleteImg = () => {
+    setImg(null);
+    fileref.current.value = null;
+};
+const fileref = useRef();
+```
+
+ref를 이용하여 파일선택값을 없애게 할 수 있다
+
 **파일 업로드하기**
 
-파일을 읽었으니 sumit을 통해서 데이터베이스에 저장해 줄 차례이다 기존의 submit을 
+파일을 읽었으니 sumit을 통해서 데이터베이스에 저장해 줄 차례이다 기존의 submit을 수정하자 userid폴더에 랜덤으로 부여된 값으로 파일을 Storage에 저장할것이다 
 
 ```react
 const onSubmit = async (event) => {
@@ -621,21 +642,150 @@ const onSubmit = async (event) => {
     let imgUrl = "";
     if (img) {
         const fileRef = storageService.ref().child(`${userObj.uid}/${uuidv4()}`);
-        const response = await fileRef.putString(img, "data_url");
-        console.log(await response.ref.getDownloadURL()); //요 3줄 이해하기 참힘들었따...
-        imgUrl = await response.ref.getDownloadURL(); //https://firebase.google.com/docs/storage/web/download-files?authuser=0
+        const response = await fileRef.putString(img, "data_url"); //data_url type으로 이미지를 firebase에 저장
+        imgUrl = await response.ref.getDownloadURL(); //저장한 이미지의 URL을 가져와 tweet에 저장한다 //https://firebase.google.com/docs/storage/web/download-files?authuser=0
     }
     const clonetweetObj = {
         text: clonetweet,
         createAt: Date.now(),
         user: userObj.uid,
-        imgUrl,
+        imgUrl,//이미지 주소 저장
     };
-    dbService.collection("cloneTweet").add(clonetweetObj);
+    dbService.collection("cloneTweet").add(clonetweetObj);//트윗저장
     setClonetweet("");
     setImg("");
 };
 ```
+
+firebase Storage에 사진을 저장하고 그 url을 받아서 tweet 즉 firebase database에 저장하는 것이다
+
+**트윗에 사진 띄우기**
+
+```react
+<h4>{clonetweet.text}</h4>
+{clonetweet.imgUrl && (
+    <img
+        src={clonetweet.imgUrl}
+        alt="트윗의 이미지를 불러올수 없습니다"
+        ></img>
+)}
+```
+
+트윗창 밑에 img태그를 만들어서 이미지를 띄울 것이다. tweet을 받아와 안에 있는 url을 불러들여 트윗을 띄운다
+
+**파일 삭제하기**
+
+tweet을 삭제할때 쓰는 deleteTweet이라는 함수를 변경해 줄것이다.
+
+```react
+  const deleteTweet = () => {
+    const ok = window.confirm("Are you sure delete this?");
+    if (ok) {
+      dbService.doc(`cloneTweet/${clonetweet.id}`).delete();
+      storageService.refFromURL(clonetweet.imgUrl).delete();//추가가 되었다
+    }
+  };
+```
+
+`storageService.refFromURL(clonetweet.imgUrl).delete()`을 이용해서 사진파일을 삭제해 준다
+
+
+
+## 프로필 설정하기
+
+**프로필 바꾸기**
+
+위의 tweet때 사진올리는 방법이랑 같다
+
+```react
+const [updateUserImg, setUpdateUserImg] = useState(null);
+const [profileName, setProfileName] = useState(userObj.displayName);
+<form onSubmit={onSubmit}>
+    <input
+        placeholder="display name"
+        type="text"
+        value={profileName}
+        onChange={onChange}
+        ></input>
+    <input
+        type="file"
+        accept="image/*"
+        onChange={onImgChange}
+        ref={fileRef}
+        ></input>
+    <input type="submit" placeholder="Update Profile"></input>
+</form>
+{updateUserImg && (
+    <>
+    <img
+        src={updateUserImg}
+        ref={imgRef}
+        alt="미리보기를 불러올수 없습니다"
+        />
+    <button onClick={deleteImg}>Clear</button>
+    </>
+)}
+```
+
+이름은 input창을 받아 input창에 이름이 입력되면 state에 저장이되고 (항상하던 state에 입력 저장방식) submit이 실행이되면 이 state를 이용해서 user의 profile을 update해 줄것이다.
+
+똑같이 input창을 만들고 사진을 선택해서 state에 data_url 타입으로 저장하고 이것을 tweet과 같은 방법으로 storage에 저장을하고 이 url을 받아서 user의 profile을 update해 줄것이다.
+
+```react
+const onSubmit = async (event) => {
+    event.preventDefault();
+    if (userObj.displayName !== profileName) {
+      await userObj.updateProfile({
+        displayName: profileName,
+      });
+      refreshUser();
+    }
+    if (updateUserImg) {
+      const attachmentRef = storageService
+        .ref()
+        .child(`userPhoto/${userObj.uid}`);
+      const response = await attachmentRef.putString(updateUserImg, "data_url");
+
+      const UserImgUrl = await response.ref.getDownloadURL();
+      await userObj.updateProfile({
+        photoURL: UserImgUrl,
+      });
+      setUpdateUserImg(null);
+      fileRef.current.value = null;
+      refreshUser(); //App.js에서 새로만든 함수이다 userObj를 새로 가져온다
+    }
+  };
+```
+
+작동은 똑같다 `await userObj.updateProfile({photoURL: UserImgUrl,});` 를 이용해서 프로필을 업데이트 할 수 있다
+
+**문제점들**
+
+지금 방식은 userObj를 App이라는 최상위 컴포넌트에서 가져왔다 하지만 문제점이 하위 컴포넌트에서 이 userObj를 수정하거나 랜더링 하였을시에 바로 화면에 적용되지 않는다는 점이다 일단 userObj가 매우큰 object형이라서 react가 이 userObj가 변경이 되었는지 안되었는지 확인하기 힘들어서 사용자가 직접 새로고침을 하지 않는이상 랜더링을 다시 시키지 않는다 
+
+해결방법
+
+1. obj를 작은단위로 쪼개서 react가 알게끔한다 =>비추
+
+2. obj를 수정한후에 직접 refresh를 시켜준다
+
+   ```react
+   //App.js
+   const refreshUser = () => {
+       const user = authService.currentUser;
+       setUserObj({
+         displayName: user.displayName,
+         uid: user.uid,
+         photoURL: user.photoURL,
+         updateProfile: (args) => user.updateProfile(args),
+       });
+     };
+   //호출 할때마다 obj를 다시 불러온다
+   ```
+
+## firebase 보안
+
+https://nomadcoders.co/nwitter/lectures/1936
 
 
 

@@ -1,0 +1,41 @@
+.tweets {
+  display: flex;
+  flex-direction: row;
+  justify-content: center;
+  border-radius: 10px;
+  background-color: white;
+  color: black;
+  margin-top: 20px;
+  padding: 10px;
+  position: relative;
+}
+
+.tweetAction {
+  right: 10px;
+  top: 10px;
+  position: absolute;
+}
+
+.editTweet {
+  color: black;
+  text-align: center;
+  display: flex;
+  flex-direction: row;
+  align-content: center;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+/*.deletePhotoBtn  과 같은버튼*/
+.deleteTweetBtn {
+  background-color: rgb(223, 78, 78);
+  width: 7em;
+  margin: 10px;
+  border-radius: 10px;
+}
+.updateTweetBtn {
+  background-color: #04aaff;
+  width: 7em;
+  margin: 10px;
+  border-radius: 10px;
+}
