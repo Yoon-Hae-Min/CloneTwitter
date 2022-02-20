@@ -1,10 +1,15 @@
 {
   "dependencies": {
+    "install": "^0.13.0",
+    "npm": "^8.4.1",
     "prop-types": "^15.8.1",
+    "react-slick": "^0.28.1",
+    "redux-devtools-extension": "^2.13.9",
     "style-components": "^0.1.0",
     "upgrade": "^1.1.0"
   },
   "devDependencies": {
+    "@babel/preset-react": "^7.16.7",
     "eslint": "^8.8.0",
     "eslint-plugin-import": "^2.25.4"
   }
