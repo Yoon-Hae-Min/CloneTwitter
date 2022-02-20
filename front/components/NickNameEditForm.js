@@ -1,6 +1,6 @@
-import { Form, Input } from "antd";
-import React from "react";
-import styled from "styled-components";
+import { Form, Input } from 'antd';
+import React from 'react';
+import styled from 'styled-components';
 
 const EditForm = styled(Form)`
   marginbottom: 20px;
@@ -8,16 +8,16 @@ const EditForm = styled(Form)`
   padding: 20px;
 `;
 
-const NickNameEditForm = () => {
+function NickNameEditForm() {
   return (
     <EditForm>
       <Input.Search
         enterButton
         addonBefore="닉네임"
         enterButton="수정"
-      ></Input.Search>
+      />
     </EditForm>
   );
-};
+}
 
 export default NickNameEditForm;

@@ -33,7 +33,7 @@ export const Header = styled.header`
       line-height 44px;
   }
 
-`; // scss같은 문법을 쓸 수도 있다 이런방법을 주로쓰자 컴포넌트가 많아진다
+`;
 export const CloseBtn = styled.span`
   position: absolute;
   right: 0;

@@ -1,24 +1,40 @@
-import { Button, Form, Input } from "antd";
-import React, { useCallback } from "react";
-import useInput from "../Hooks/useInput";
-import PropTypes from "prop-types";
-const CommentForm = ({ Post }) => {
-  const [commentText, onChangeCommentText] = useInput();
+import { Button, Form, Input } from 'antd';
+import React, { useCallback, useEffect } from 'react';
+import PropTypes from 'prop-types';
+import { useDispatch, useSelector } from 'react-redux';
+import useInput from '../Hooks/useInput';
+import { addCommentAction } from '../reducers/post';
+
+function CommentForm({ Post }) {
+  const [commentText, onChangeCommentText, setCommentText] = useInput();
+  const id = useSelector((state) => state.User.user?.id);
+  const { addCommentSuccess, addCommentLoading } = useSelector(
+    (state) => state.post,
+  );
+  const dispatch = useDispatch();
   const onSubmitComment = useCallback(() => {
-    console.log(Post.id, commentText);
-  });
+    dispatch(
+      addCommentAction({ content: commentText, postId: Post.id, userId: id }),
+    );
+  }, [commentText]);
+
+  useEffect(() => {
+    if (addCommentSuccess) {
+      setCommentText('');
+    }
+  }, [addCommentSuccess]);
   return (
     <Form onFinish={onSubmitComment}>
       <Input.TextArea
         value={commentText}
         onChange={onChangeCommentText}
-      ></Input.TextArea>
-      <Button htmlType="submit" type="primary">
+      />
+      <Button htmlType="submit" type="primary" loading={addCommentLoading}>
         삐약삐약
       </Button>
     </Form>
   );
-};
+}
 
 CommentForm.propTypes = {
   Post: PropTypes.shape({

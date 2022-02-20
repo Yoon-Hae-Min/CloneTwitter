@@ -1,9 +1,10 @@
-import React, { useState } from "react";
-import PropTypes from "prop-types";
-import { PlusOutlined } from "@ant-design/icons/lib/icons";
-import ImagesZoom from "./ImagesZoom";
+/* eslint-disable jsx-a11y/no-noninteractive-element-interactions */
+import React, { useState } from 'react';
+import PropTypes from 'prop-types';
+import { PlusOutlined } from '@ant-design/icons/lib/icons';
+import ImagesZoom from './ImagesZoom';
 
-const PostImage = ({ Images }) => {
+function PostImage({ Images }) {
   const [showImagesZoom, setShowImagesZoom] = useState(false);
   const onZoom = () => {
     setShowImagesZoom(true);
@@ -24,19 +25,19 @@ const PostImage = ({ Images }) => {
       </>
     );
   }
-  //role="presentation" 는 스크린리더가 이건 클릭할수는 있지만 굳이 클릭할 필요는 없다라고 인식
+  // role="presentation" 는 스크린리더가 이건 클릭할수는 있지만 굳이 클릭할 필요는 없다라고 인식
   if (Images.length === 2) {
     return (
       <>
         <img
           src={Images[0].src}
-          style={{ width: "50%", display: "inline-block" }}
+          style={{ width: '50%', display: 'inline-block' }}
           alt={Images[0].src}
           onClick={onZoom}
         />
         <img
           src={Images[0].src}
-          style={{ width: "50%", display: "inline-block" }}
+          style={{ width: '50%', display: 'inline-block' }}
           alt={Images[0].src}
           onClick={onZoom}
         />
@@ -49,8 +50,8 @@ const PostImage = ({ Images }) => {
       <img
         src={Images[0].src}
         style={{
-          width: "50%",
-          display: "inline-block",
+          width: '50%',
+          display: 'inline-block',
         }}
         alt={Images[0].src}
         onClick={onZoom}
@@ -58,10 +59,10 @@ const PostImage = ({ Images }) => {
       <div
         onClick={onZoom}
         style={{
-          width: "50%",
-          display: "inline-block",
-          textAlign: "center",
-          verticalAlign: "center",
+          width: '50%',
+          display: 'inline-block',
+          textAlign: 'center',
+          verticalAlign: 'center',
         }}
       >
         <PlusOutlined />
@@ -70,7 +71,7 @@ const PostImage = ({ Images }) => {
       {showImagesZoom && <ImagesZoom Images={Images} onClose={onClose} />}
     </>
   );
-};
+}
 
 PostImage.propTypes = {
   Images: PropTypes.arrayOf(PropTypes.object),

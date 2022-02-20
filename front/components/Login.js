@@ -1,9 +1,9 @@
-import React, { useCallback, useState } from "react";
-import { Button, Form, Input } from "antd";
-import Link from "next/link";
-import styled from "styled-components";
-import { useDispatch } from "react-redux";
-import { logInAction } from "../reducers/User";
+import React, { useCallback, useState } from 'react';
+import { Button, Form, Input } from 'antd';
+import Link from 'next/link';
+import styled from 'styled-components';
+import { useDispatch, useSelector } from 'react-redux';
+import { logInRequestAction } from '../reducers/User';
 
 const ButtonWrapper = styled.div`
   margin-top: 10px;
@@ -11,28 +11,34 @@ const ButtonWrapper = styled.div`
 const LoginFormWrapper = styled(Form)`
   padding: 10px;
 `;
-const Login = () => {
-  const [id, setId] = useState("");
-  const [password, setPassword] = useState("");
+function Login() {
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const { LogInLoading } = useSelector((state) => state.User);
 
   const dispatch = useDispatch();
 
-  const onChangeId = useCallback((event) => {
-    setId(event.target.value);
+  const onChangeemail = useCallback((event) => {
+    setEmail(event.target.value);
   });
 
   const onChangePassword = useCallback((event) => {
     setPassword(event.target.value);
   });
   const onFinishLogin = () => {
-    dispatch(logInAction({ id, password }));
+    dispatch(logInRequestAction({ email, password }));
   };
   return (
     <LoginFormWrapper onFinish={onFinishLogin}>
       <div>
-        <label htmlFor="user-id">아이디</label>
+        <label htmlFor="user-email">이메일</label>
         <br />
-        <Input name="user-id" value={id} onChange={onChangeId}></Input>
+        <Input
+          type="email"
+          name="user-email"
+          value={email}
+          onChange={onChangeemail}
+        />
       </div>
       <div>
         <label htmlFor="user-password">비밀번호</label>
@@ -41,10 +47,10 @@ const Login = () => {
           name="user-password"
           value={password}
           onChange={onChangePassword}
-        ></Input>
+        />
       </div>
       <ButtonWrapper>
-        <Button type="primary" htmlType="submit" loading={false}>
+        <Button type="primary" htmlType="submit" loading={LogInLoading}>
           로그인
         </Button>
         <Link href="/signup">
@@ -55,6 +61,6 @@ const Login = () => {
       </ButtonWrapper>
     </LoginFormWrapper>
   );
-};
+}
 
 export default Login;

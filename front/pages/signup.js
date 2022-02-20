@@ -1,20 +1,20 @@
-import AppLayOut from "../components/AppLayOut";
-import React, { useCallback, useState } from "react";
-import Head from "next/head";
-import { Button, Checkbox, Form, Input } from "antd";
-import useInput from "../Hooks/useInput";
-import styled from "styled-components";
+import React, { useCallback, useState } from 'react';
+import Head from 'next/head';
+import { Button, Checkbox, Form, Input } from 'antd';
+import styled from 'styled-components';
+import useInput from '../Hooks/useInput';
+import AppLayOut from '../components/AppLayOut';
 
 const ErrorMessage = styled.div`
   color: red;
 `;
 
 const signup = () => {
-  const [id, onChangeId] = useInput("");
-  const [password, onChangePassword] = useInput("");
+  const [id, onChangeId] = useInput('');
+  const [password, onChangePassword] = useInput('');
   const [passwordCheck, setPasswordCheck] = useState();
   const [passwordError, setPasswordError] = useState(true);
-  const [term, setTerm] = useState("");
+  const [term, setTerm] = useState('');
   const [termError, setTermError] = useState(true);
 
   const onChangePasswordCheck = useCallback((e) => {
@@ -43,7 +43,7 @@ const signup = () => {
         <div>
           <label htmlFor="user-id">아이디</label>
           <br />
-          <Input name="user-id" value={id} onChange={onChangeId}></Input>
+          <Input name="user-id" value={id} onChange={onChangeId} />
         </div>
         <div>
           <label htmlFor="user-password">비밀번호</label>
@@ -52,7 +52,7 @@ const signup = () => {
             name="user-password"
             value={password}
             onChange={onChangePassword}
-          ></Input>
+          />
         </div>
         <div>
           <label htmlFor="user-password-check">비밀번호 확인</label>
@@ -61,7 +61,7 @@ const signup = () => {
             name="user-password-check"
             value={passwordCheck}
             onChange={onChangePasswordCheck}
-          ></Input>
+          />
         </div>
         {passwordError && (
           <ErrorMessage>비밀번호가 서로 맞지 않습니다</ErrorMessage>
